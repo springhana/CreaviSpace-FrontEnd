@@ -5,7 +5,7 @@ import { RiKakaoTalkFill } from '@react-icons/all-files/ri/RiKakaoTalkFill';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import useSignUpModal from '@/hooks/useSignUpModal';
+import useSignUpModal from '@/store/useSignUpModal';
 
 import Modals from './Modals';
 
@@ -17,7 +17,7 @@ export default function SignUpModal() {
       title: '구글',
       icon: <FcGoogle key="google" size={45} />,
       style: 'bg-white',
-      link: '/',
+      link: 'https://port-0-creavispace-backend-am952nlsse11uk.sel5.cloudtype.app/oauth2/authorization/google',
     },
     {
       title: '카카오',
@@ -43,15 +43,16 @@ export default function SignUpModal() {
         />
       ),
       style: 'bg-green-500 p-3 flex',
-      link: '/',
+      link: 'https://port-0-creavispace-backend-am952nlsse11uk.sel5.cloudtype.app/oauth2/authorization/naver',
     },
   ];
+
   return (
     <Modals isOpen={isOpen} onClose={onClose}>
       <ModalHeader className="text-center mt-10 mb-2">회원가입</ModalHeader>
       <ModalCloseButton />
       <ModalBody>
-        <section className="mb-11 m-auto w-fit flex justify-between gap-3">
+        <section className="mb-11 m-auto w-fit flex justify-between gap-10">
           {icons.map((icon, index) => (
             <Link
               key={`icon-${index}`}

@@ -1,56 +1,66 @@
-// import { useDisclosure } from '@chakra-ui/react';
 import { AiOutlineSearch } from '@react-icons/all-files/ai/AiOutlineSearch';
+import { FaListUl } from '@react-icons/all-files/fa/FaListUl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import CustomButton from '@/components/button/CustomButton';
-import LogInUserHeader from '@/components/LogInUserHeader';
-import useLoginModal from '@/hooks/useLoginModal';
-import useSearchErrorModal from '@/hooks/useSearchErrorModal';
-import useSignUpModal from '@/hooks/useSignUpModal';
+import LogInUserHeader from '@/components/layout/LogInUserHeader';
+import useLoginModal from '@/store/useLoginModal';
+import useSearchErrorModal from '@/store/useSearchErrorModal';
+import useSignUpModal from '@/store/useSignUpModal';
+import { getCookies } from '@/utils/getCookies';
 
-interface MenuItem {
-  name: string;
-  link: string;
-}
+import MoblieCategory from './MoblieCategory';
+
+const MENU = [
+  { name: '프로젝트', link: '/project?type=all' },
+  { name: '모집', link: '/recruitment?type=all' },
+  { name: '커뮤니티', link: '/community?type=all' },
+];
 
 export default function Header() {
   const [value, setValue] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setLogin] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [isMCategoryVisible, setIsMCategoryVisible] = useState(false);
 
   const router = useRouter();
   const pathname = router.pathname;
 
   const { onOpen: openLogin } = useLoginModal();
   const { onOpen: openSignUp } = useSignUpModal();
-  const { onOpen } = useSearchErrorModal();
+  const { onOpen: openSearchError } = useSearchErrorModal();
 
-  const menu: Array<MenuItem> = [
-    { name: '프로젝트', link: '/project?type=all' },
-    { name: '모집', link: '/recruitment?type=all' },
-    { name: '커뮤니티', link: '/community?type=all' },
-  ];
+  const MID = getCookies('MID', true);
+  const ACCESE_TOKEN = getCookies('jwt');
+
+  useEffect(() => {
+    if (MID && ACCESE_TOKEN) {
+      setLogin(true);
+    }
+  }, [MID, ACCESE_TOKEN]);
 
   const handleSearchToggle = () => {
     setIsSearchVisible(!isSearchVisible);
+    setIsMCategoryVisible(false);
   };
 
-  const handleSignInOut = () => {
-    setIsLogin(!isLogin);
+  const handleMenuToggle = () => {
+    setIsMCategoryVisible(!isMCategoryVisible);
+    setIsSearchVisible(false);
   };
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
   };
 
-  const handleSearchTest = () => {
+  const handleSearch = () => {
     if (value.trim().length >= 1) {
-      router.push(`/search?type="all"`);
+      router.push(`/search?type=all&text=${value}`);
     } else {
-      onOpen();
+      openSearchError();
     }
   };
 
@@ -60,7 +70,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 w-full h-16 z-20 bg-white">
-      <nav className="border-b border-gray10 ">
+      <nav className="border-b border-gray10 px-3">
         <div className="flex justify-between max-w-max_w content-center m-auto items-center">
           <h1>
             <Link href="/">
@@ -73,46 +83,51 @@ export default function Header() {
               />
             </Link>
           </h1>
-          <ul className="flex mobile:hidden">
-            {menu.map((item, index) => (
-              <li key={index}>
-                <Link
-                  href={item.link}
-                  className="p-5 text-center block hover:text-primary">
-                  {item.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+
           <div className="flex items-center">
+            <FaListUl
+              size={25}
+              className="hidden mobile:block"
+              onClick={handleMenuToggle}
+            />
+            <ul className="flex mobile:hidden">
+              {MENU.map((item, index) => (
+                <li key={index}>
+                  <Link
+                    href={item.link}
+                    className="p-5 text-center block hover:text-primary">
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {isMCategoryVisible && (
+              <MoblieCategory menu={MENU} handleMenuToggle={handleMenuToggle} />
+            )}
             <div
-              className="p-5 text-center block cursor-pointer"
+              className="p-5 text-center block cursor-pointer mobile:p-2"
               aria-label="검색 버튼"
               onClick={handleSearchToggle}>
               <AiOutlineSearch size={22} />
             </div>
             {isLogin ? (
+              <LogInUserHeader MID={MID} ACCESE_TOKEN={ACCESE_TOKEN} />
+            ) : (
               <ul className="flex">
                 <li>
                   <CustomButton
-                    // onClick={handleSignInOut}
-                    onClick={() => {
-                      openLogin();
-                      handleSignInOut();
-                    }}
-                    className="py-2 px-4 mr-3"
+                    onClick={openLogin}
+                    className="py-2 px-4 mr-3 mobile:mr-0"
                     color="primary">
                     로그인
                   </CustomButton>
                 </li>
-                <li>
+                <li className="mobile:hidden">
                   <CustomButton onClick={openSignUp} className="py-2 px-3">
                     회원가입
                   </CustomButton>
                 </li>
               </ul>
-            ) : (
-              <LogInUserHeader onClick={handleSignInOut} />
             )}
           </div>
         </div>
@@ -123,10 +138,10 @@ export default function Header() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSearchTest();
+                handleSearch();
               }}
               className="max_w h-full m-auto relative max-w-max_w mobile:px-3">
-              <label htmlFor="searchValue" id="searchValue" className="sr-only">
+              <label htmlFor="searchValue" className="sr-only">
                 검색창
               </label>
               <input

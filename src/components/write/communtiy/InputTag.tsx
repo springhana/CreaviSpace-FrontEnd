@@ -3,10 +3,35 @@ import { SetStateAction, useEffect, useRef, useState } from 'react';
 
 import CustomButton from '@/components/button/CustomButton';
 
-export default function InputTag() {
+interface IInputTagProps {
+  className?: string;
+  value: string | string[];
+  setValue: (value: string | string[]) => void;
+}
+
+export default function InputTag({
+  className,
+  value,
+  setValue,
+}: IInputTagProps) {
   const [inputValue, setInputValue] = useState('');
   const [displayedValues, setDisplayedValues] = useState<string[]>([]);
   const inputRef = useRef(null);
+
+  useEffect(
+    function updateValue() {
+      if (value) {
+        if (typeof value === 'string') {
+          const newValue = [value];
+          setDisplayedValues(newValue);
+        } else if (typeof value === 'object') {
+          const newValue = [...value];
+          setDisplayedValues(newValue);
+        }
+      }
+    },
+    [value]
+  );
 
   const handleInputChange = (e: {
     target: { value: SetStateAction<string> };
@@ -14,20 +39,17 @@ export default function InputTag() {
     setInputValue(e.target.value);
   };
 
-  const handleInputKey = (e: { key: string }) => {
-    // 'Enter' 키 입력시
-    if (e.key === 'Enter') {
-      // value 값 배열 생성
-      setDisplayedValues((prevValues) => [...prevValues, inputValue]);
-      // input 태그 value 삭제
-      setInputValue('');
-    } else if (e.key === ',') {
-      // ',' 입력시 쉼표를 제거하고 value 값 배열 생성
-      setDisplayedValues((prevValues) => [
-        ...prevValues,
-        inputValue.replace(/,/g, ''),
-      ]);
-      // input 태그 value 삭제
+  const handleInputKey = (e: { key: string; keyCode: number }) => {
+    if (e.key === 'Enter' || e.key === ',' || e.keyCode === 32) {
+      let newValues;
+      if (e.key === ',') {
+        newValues = [...displayedValues, inputValue.replace(/,/g, '')];
+      } else {
+        newValues = [...displayedValues, inputValue];
+      }
+
+      setValue(typeof value === 'string' ? inputValue : newValues);
+
       setInputValue('');
     }
   };
@@ -38,12 +60,11 @@ export default function InputTag() {
       (prevValues) => prevValues.filter((_, i) => i !== index)
       // => 특정 index(i)에 해당하는 요소를 제외한 새로운 배열을 생성
     );
+    setValue(displayedValues.filter((_, i) => i !== index));
   };
 
-  useEffect(() => {}, [displayedValues]);
-
   return (
-    <div className="w-full">
+    <div className={`${className} w-full`}>
       <div className="flex items-center max-w-max_w overflow-hidden">
         {displayedValues.map((value, index) => (
           <div key={index} className="flex justify-between mr-1">
@@ -52,9 +73,9 @@ export default function InputTag() {
               color="hashtag"
               className="pl-3 pr-2 py-1 text-bs_14 mr-1 flex items-center">
               <p className="mr-2 text-nowrap">{value}</p>
-              <button>
+              <span>
                 <IoCloseOutline size={20} />
-              </button>
+              </span>
             </CustomButton>
           </div>
         ))}

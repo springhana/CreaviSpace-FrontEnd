@@ -1,29 +1,38 @@
 import 'cropperjs/dist/cropper.css';
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import Cropper, { ReactCropperElement } from 'react-cropper';
 
 interface PropsType {
   onCrop: (image: string) => void;
   aspectRatio: number;
   children: React.ReactNode;
+  image: string | null;
+  setImage: (image: string | null) => void;
+  setImageName: (imageName: string) => void;
 }
 
-const ImageCropper = ({ children, aspectRatio, onCrop }: PropsType) => {
+const ImageCropper = ({
+  children,
+  aspectRatio,
+  onCrop,
+  image,
+  setImage,
+  setImageName,
+}: PropsType) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const cropperRef = useRef<ReactCropperElement>(null);
-  const [image, setImage] = useState<null | string>(null);
 
   const handleChildrenClick = () => {
     if (inputRef.current) inputRef.current.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-
     const files = e.target.files;
 
     if (!files || files.length === 0) return;
+    setImageName(files[0].name);
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -48,14 +57,19 @@ const ImageCropper = ({ children, aspectRatio, onCrop }: PropsType) => {
         onChange={handleFileChange}
         className="sr-only"
       />
-      <label htmlFor="Imagefile" onClick={handleChildrenClick}>
+      <label
+        htmlFor="Imagefile"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleChildrenClick();
+        }}>
         {children}
       </label>
       {image && (
-        <div className="fixed left-0 top-0 w-screen h-screen flex justify-center items-center z-10">
-          <div className="fixed w-full h-full bg-[#000000e0]" />
+        <div className="fixed left-0 top-0 w-screen h-screen flex justify-center items-center z-20">
+          <div className="fixed top-0 left-0 w-full h-full bg-[#000000cc] " />
           <div className="z-[2] bg-white overflow-y-auto overflow-x-hidden flex flex-col max-h-[80%]">
-            <h2 className="font-semibold text-bs_22 leading-7 px-4 py-5">
+            <h2 className="font-semibold text-bs_20 leading-7 px-4 py-5">
               이미지 편집하기
             </h2>
             <div className="flex-1 flex items-center justify-center bg-white">

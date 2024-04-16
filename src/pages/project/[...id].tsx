@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 import SideButton from '@/components/button/SideButton';
 import CommentContainer from '@/components/container/CommentContainer';
@@ -8,60 +8,68 @@ import Members from '@/components/details/project/Members';
 import SkillStack from '@/components/details/project/SkillStack';
 import SkeletonDetail from '@/components/skeleton/SkeletonDetail';
 import Tag from '@/components/Tag';
-import { details } from '@/utils/data';
+import useProjectDetail from '@/hooks/useProjectDetail';
+import { getCookies } from '@/utils/getCookies';
 
 export default function ProjectDetail() {
-  const Personnel = [
-    { personnel: '디자인', people: [{ name: 'author' }, { name: 'author' }] },
-    {
-      personnel: '프론트엔드',
-      people: [{ name: 'author' }, { name: 'author' }],
-    },
-    { personnel: '백엔드', people: [{ name: 'author' }, { name: 'author' }] },
-    { personnel: 'PM', people: [{ name: 'author' }] },
-  ];
-
-  const Links = [
-    { title: 'Android', link: '/google' },
-    { title: 'Ios', link: '/apple' },
-    { title: 'Web', link: '/web' },
-  ];
-
-  const skill = ['react', 'java'];
-
-  if (false) {
-    return <SkeletonDetail />;
-  }
+  const router = useRouter();
+  const { id } = router.query;
+  const { isLoading, isError, data, isFetching } = useProjectDetail(
+    id as string
+  );
+  const MID = getCookies('MID', true);
 
   return (
-    <div className="relative max-w-max_w m-auto py-10 px-16">
-      <DetailsTitle
-        type="project"
-        time={'2024.01.08'}
-        views={0}
-        likes={3}
-        title="Some Title"
-        userName="author"
-      />
-      <SideButton />
-      <div className="py-8 border-b border-gray10">
-        <div
-          className="ql_editor"
-          dangerouslySetInnerHTML={{ __html: details.content }}
-        />
-      </div>
-      <div className="py-8 border-b border-black">
-        <Tag name={'팀 프로젝트'} category={'team'} />
-        <Members personnel={Personnel} />
-        <DistributeLink link={Links} />
-        <SkillStack skill={skill} />
-      </div>
-      <Link href="/feedback">
-        <div className="text-right py-5">
-          <Tag name={'설문조사 참여'} category={'team'} />
-        </div>
-      </Link>
-      <CommentContainer />
-    </div>
+    <main className="relative max-w-max_w m-auto p-16 tablet:px-8 mobile:px-8">
+      {isLoading ? (
+        <SkeletonDetail />
+      ) : (
+        data?.id && (
+          <section>
+            <DetailsTitle
+              type="project"
+              time={data.modifiedDate}
+              views={data.viewCount}
+              title={data.title}
+              userName="author"
+              category={data.category}
+              id={data.id}
+            />
+            <SideButton id={data.id} type={data.postType} />
+            <div className="py-8 border-b border-gray10">
+              <div
+                className="ql_editor"
+                dangerouslySetInnerHTML={{ __html: data.content }}
+              />
+            </div>
+            <div className="py-8 border-b border-black">
+              <Tag
+                name={data.field === 'team' ? '팀 프로젝트' : '개인 프로젝트'}
+                category={data.field}
+              />
+              <Members positions={data.positions} />
+              <DistributeLink links={data.links} />
+              <SkillStack techStacks={data.techStacks} />
+            </div>
+
+            <div className="w-full text-right">
+              {MID === data.memberId && (
+                <button
+                  className="my-5"
+                  onClick={() => router.push(`/feedback/${data.id}`)}>
+                  <Tag name={'설문조사 확인'} category={'INDIVIDUAL'} />
+                </button>
+              )}
+              <button
+                className="my-5"
+                onClick={() => router.push(`/feedback/question/${data.id}`)}>
+                <Tag name={'설문조사 참여'} category={'TEAM'} />
+              </button>
+            </div>
+            <CommentContainer id={data.id} type={data.postType} />
+          </section>
+        )
+      )}
+    </main>
   );
 }
